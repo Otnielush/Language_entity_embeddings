@@ -12,6 +12,7 @@ The nuance is that each parameter does not necessarily correspond to which param
 For example, a small model has a vector of size 768. And it is not necessary that among them there is **only one** number responsible for the volume. 
 Loudness can be expressed through several numbers. 
 This depends on how the model, during the training process, understood by what abstract parameters to separate information.
+
 ---
 ## Introduction
 In 2013, data scientists discovered an interesting trick:  
@@ -29,6 +30,7 @@ In this case, each text has meaning and information about the language.
 
 When I search by cosine similarity between vectors, I get the meaning similarity coefficient plus the language similarity coefficient.  
 To get search results based only on meaning, I need to remove language entity from texts.  
+
 ---
 ## Create language entity
 I decided to solve that problem thru finding meanings of different texts, 
@@ -45,19 +47,66 @@ If I find average value of vectors from same sentence in all languages it will b
 
 
 ### Now codding starts
-**Imports and helpful functions:**  
+**Imports and download data:**  
 
 ```python
 import openai
 import pandas as pd
-import os
-import re
-import time
 import numpy as np
 ```
 ```python
 openai.api_key = "YOUR_API_KEY"
 ```
+```python
+languages = ['English', 'Spanish', 'French', 'German', 'Italian', 'Dutch', 'Russian', 'Chinese', 'Japanese', 'Korean',
+'Arabic', 'Portuguese', 'Swedish', 'Norwegian', 'Danish', 'Finnish', 'Hindi', 'Turkish', 'Greek', 'Polish', 'Czech', 'Ukrainian', 'Hebrew']
+
+# already generated texts
+text_data = pd.read_csv('https://raw.githubusercontent.com/Otnielush/Language_entity_embeddings/main/data/text_data.csv', encoding='utf-8')
+```
+in 'text_data' first column is theme of sentences  
+21 rows and 70 columns
+
+```python
+import requests
+import io
+
+# converted to embeddings with OpenAI text-embedding-3-small
+response = requests.get('https://raw.githubusercontent.com/Otnielush/Language_entity_embeddings/main/data/embd_data.npy')
+response.raise_for_status()
+embd_np = np.load(io.BytesIO(response.content))
+```
+21 row, 69 columns and 1536 dimention of embeddings vector
+
+---
+We got data, now averaging meanings of sentences  
+```python
+meanings = np.zeros((21, 3, 1536))  # 21 themes, 3 different sentences for each language
+for i in range(int(embd_np.shape[1] / 3)):
+    meanings += embd_np[:, i * 3: (i+1) * 3]
+
+meanings /= int(embd_np.shape[1] / 3)
+```
+Each averaged vector of sentence meaning contains meaning + noise 
+<center><img src="readme_files/meaning_noise.png" width="400"></center>
+
+noise comes from information about language entity, because by averaging different languages we can`t nulify their 
+entity from vector. Actually we found center point in vector space for languages in dataset.  
+Also noise contains differences in word meanings for different languages.  
+For example: 
+- *Tsunami* (eng) - in english series of ocean waves with extremely long wavelengths and period, usually caused by a large-scale disturbance of the sea.
+But in Japanese, it can also be used to describe something enormous, overwhelming, or unstoppable.
+- *Preservative* (eng) - refers to a substance used to prevent the decay or spoilage of food, beverages, and other perishable items.
+In Japanese **ホルマリン** (chorumarin), which also means "formaldehyde". In Japan, the word is often used in a negative context, implying that the product contains potentially dangerous chemicals.
+Claude ©
+---
+Next step we subtract averaged meaning vectors from corresponding vectors in each language.  
+Remaining information will be distance of current language from center of our languages.  
+Averaging entities for each language from 3 different sentences.
+<center><img src="readme_files/lang_entities.png" width="400"></center>
+
+
+
 ```python
 def get_embedding(text: str, model="text-embedding-3-small", **kwargs):
     # replace newlines, which can negatively affect performance.
