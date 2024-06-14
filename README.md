@@ -105,7 +105,8 @@ As I mentioned for each theme was generated 3 different sentences, so now we hav
 ```python
 print(meanings.shape)
 ```
-    (21, 3, 1536)  
+>(21, 3, 1536)  
+
 Array with same size for each language.  
 After subtraction remaining information will be distance of current language from center of all our languages - **_language entity_**. 21 x 3 entities for each language. 
 Averaging those entities to get mean vector values.
@@ -119,15 +120,11 @@ for i, lang in enumerate(languages):
 
 entities
 ```
-    {'English': array([-0.00071909, -0.01081806,  0.0233998 , ..., -0.00593629,
-        -0.00052941,  0.01583778]),
-    'Spanish': array([ 0.015884  , -0.01137658,  0.02254141, ...,  0.00485155,
-         0.01338927,  0.0092479 ]),
-    'French': array([ 0.00666887, -0.01062366,  0.01024823, ...,  0.00626572,
-         0.00018394,  0.01670346]),
-    'German': array([-0.01385595,  0.00274788, -0.00089954, ..., -0.00057139,
-         0.00919268,  0.00804384]),
-    ...
+>{'English': array([-0.00071909, -0.01081806,  0.0233998 , ..., -0.00593629, -0.00052941,  0.01583778]),  
+    'Spanish': array([ 0.015884  , -0.01137658,  0.02254141, ...,  0.00485155, 0.01338927,  0.0092479 ]),  
+    'French': array([ 0.00666887, -0.01062366,  0.01024823, ...,  0.00626572, 0.00018394,  0.01670346]),  
+    'German': array([-0.01385595,  0.00274788, -0.00089954, ..., -0.00057139, 0.00919268,  0.00804384]),  
+    ...  
 ---
 
 ## A little theory before test results
@@ -138,7 +135,8 @@ then it should be present in the embeddings.
 An interesting phenomenon can be observed in Meta's NLLB language translation model. [[paper]](https://research.facebook.com/publications/no-language-left-behind/)  
     
     quote: "By contrast, the early decoder MoE layers (Fig. 1c) seem to be less language-specific. 
-    The late encoder MoE layers are particularly language-agnostic in how they route tokens as can be attested by the uniform heat map in Fig. 1b."
+    The late encoder MoE layers are particularly language-agnostic in how they route tokens 
+    as can be attested by the uniform heat map in Fig. 1b."
 
 <center><img src="readme_files/41586_2024_7335_Fig1_HTML.webp" width="90%"></center>
     
