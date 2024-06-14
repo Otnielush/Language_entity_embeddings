@@ -101,12 +101,59 @@ In Japanese **ホルマリン** (chorumarin), which also means "formaldehyde". I
 Claude ©
 ---
 Next step we subtract averaged meaning vectors from corresponding vectors in each language.  
-Remaining information will be distance of current language from center of our languages.  
-Averaging entities for each language from 3 different sentences.
+As I mentioned for each theme was generated 3 different sentences, so now we have array with shape (21, 3, 1536), where 21 - number of themes, 3 - different sentences for each theme and 1536 - embedding vector size.
+```python
+print(meanings.shape)
+```
+    (21, 3, 1536)  
+Array with same size for each language.  
+After subtraction remaining information will be distance of current language from center of all our languages - **_language entity_**. 21 x 3 entities for each language. 
+Averaging those entities to get mean vector values.
 <center><img src="readme_files/lang_entities.png" width="400"></center>
 
+```python
+entities = {}
+for i, lang in enumerate(languages):
+    entity_arr = embd_np[:, i * 3: i * 3 + 3, :] - meanings
+    entities[lang] = entity_arr.mean(0).mean(0)
 
+entities
+```
+    {'English': array([-0.00071909, -0.01081806,  0.0233998 , ..., -0.00593629,
+        -0.00052941,  0.01583778]),
+    'Spanish': array([ 0.015884  , -0.01137658,  0.02254141, ...,  0.00485155,
+         0.01338927,  0.0092479 ]),
+    'French': array([ 0.00666887, -0.01062366,  0.01024823, ...,  0.00626572,
+         0.00018394,  0.01670346]),
+    'German': array([-0.01385595,  0.00274788, -0.00089954, ..., -0.00057139,
+         0.00919268,  0.00804384]),
+    ...
+---
 
+## A little theory before test results
+The assumption that there is language information in the embeddings depends on how the model is trained.   
+Transformer encoders for embeddings are mostly trained on tasks of determining the presence of some feature or 
+differences/similarities between sentences. If information about the language was not ignored during training, 
+then it should be present in the embeddings.  
+An interesting phenomenon can be observed in Meta's NLLB language translation model. [[paper]](https://research.facebook.com/publications/no-language-left-behind/)  
+    
+    quote: "By contrast, the early decoder MoE layers (Fig. 1c) seem to be less language-specific. 
+    The late encoder MoE layers are particularly language-agnostic in how they route tokens as can be attested by the uniform heat map in Fig. 1b."
+
+<center><img src="readme_files/41586_2024_7335_Fig1_HTML.webp" width="90%"></center>
+    
+>**a–d**, The first (**a**) and last (**b**) encoder layers and then the first (**c**) and last (**d**) decoder layers. 
+The similarity is measured with respect to the gating decisions (expert choice) per language (source side in the encoder 
+and target side in the decoder). Lighter colours represent higher experts similarity, hence, a language-agnostic processing.
+
+In this model, the final layers of encoder experts do not differentiate between languages, so if we decided to use this encoder, 
+we would not be able to extract the vector “code” of different languages. On the other hand, 
+if we used an encoder that was completely language-agnostic, then we would not encounter the problem of language-dependent similarity.
+
+---
+# In work process
+
+## Test results
 ```python
 def get_embedding(text: str, model="text-embedding-3-small", **kwargs):
     # replace newlines, which can negatively affect performance.
